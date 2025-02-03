@@ -20,6 +20,13 @@ def create_hosted_zone():
 
     response = boto3.client("route53").create_hosted_zone(**payload)
 
+    payload = {
+        "ResourceType": "hostedzone",
+        "ResourceId": response.get("HostedZone").get("Id").split("/")[-1],
+        "AddTags": [{"Key": "ExternalGroupId", "Value": "1"}]
+    }
+    boto3.client("route53").change_tags_for_resource(**payload)
+
     yield {
         "CallerReference": response.get("HostedZone").get("CallerReference"),
         "Config": {"PrivateZone": False},
@@ -29,25 +36,6 @@ def create_hosted_zone():
             "ResourceRecordSetCount"
         ),
     }
-
-
-def test_status_code_return_healthcheck_200(client):
-    """Testa código de status 200 para o endpoint /healthcheck"""
-    response = client.get("/healthcheck")
-    assert response.status_code == HTTPStatus.OK
-
-
-def test_json_return_healthcheck(client):
-    """Testa retorno JSON para o endpoint /healthcheck"""
-    response = client.get("/healthcheck")
-    assert response.headers["Content-Type"] == "application/json"
-
-
-def test_json_format_healthcheck(client):
-    """Testa formato de retorno JSON para o endpoint /healthcheck"""
-    response = client.get("/healthcheck")
-    assert response.json() == {"status": "ok"}
-
 
 def test_status_code_return_hosted_zones_200(client):
     """Testa código de status 200 para o endpoint /hosted-zones"""
@@ -64,10 +52,16 @@ def test_json_return_hosted_zones(client):
 def test_json_format_hosted_zones(client, create_hosted_zone):
     """Testa retorno JSON para o endpoint /hosted-zones"""
     response = client.get("/hosted-zones")
-    assert response.json() == {"hosted_zones": [create_hosted_zone]}
+    assert response.json() == {"hosted_zones": []}
 
 
-def test_call_boto3_to_list_hosted_zones(client, create_hosted_zone):
-    """Testa chamada da lib boto3 para listar Zonas de Hospedagem"""
-    response = client.get("/hosted-zones")
+def test_filter_list_hosted_zones(client, create_hosted_zone):
+    """Testa retorno lista com item quando encontra a tag"""
+    response = client.get("/hosted-zones?external_group_id=1")
     assert len(response.json().get("hosted_zones")) == 1
+
+
+def test_filter_list_hosted_zones_fail(client, create_hosted_zone):
+    """Testa retorno lista vazia quando não encontra a tag"""
+    response = client.get("/hosted-zones?external_group_id=2")
+    assert len(response.json().get("hosted_zones")) == 0
