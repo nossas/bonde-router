@@ -39,8 +39,8 @@ class HostedZone(Database):
 class Healthcheck(Database):
     __filename__ = "healthcheck"
 
-    def sync_updated_on(self, sync_name: str):
+    def sync_updated_on(self, sync_name: str, updated_on: str):
         self.db.upsert(
-            {"updated_on": datetime.datetime.now().isoformat(), "sync_name": sync_name},
+            {"updated_on": updated_on, "sync_name": sync_name},
             self.query.sync_name == sync_name,
         )

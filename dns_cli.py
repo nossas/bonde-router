@@ -1,5 +1,6 @@
 import click
 import csv
+import datetime
 
 from dns_api.route53 import Route53Client
 from dns_api.db import HostedZone, Healthcheck
@@ -8,8 +9,13 @@ from dns_api.db import HostedZone, Healthcheck
 @click.command()
 def sync_hosted_zones():
     """Sincroniza as Zonas de Hospedagem do Route 53 para o TinyDB."""
-    hosted_zone_db = HostedZone()
+
     healthcheck_db = Healthcheck()
+    # Marca data/hora em que a sincronização começou e salva no status
+    sync_date = datetime.datetime.now().isoformat()
+    healthcheck_db.sync_updated_on(sync_name="sync_hosted_zones", updated_on=sync_date)
+
+    hosted_zone_db = HostedZone()
     route53 = Route53Client().route53
 
     # Lista todas as zonas hospedagas
@@ -41,12 +47,13 @@ def sync_hosted_zones():
                         "name": zone["Name"],
                         "caller_reference": zone["CallerReference"],
                         "tags": tags,
+                        # Marca com a mesma data/hora em que a sincronização começou
+                        # para identificar as Zonas de Hospedagem que não foram sincronizadas
+                        "last_sync_on": sync_date,
                     },
                     hosted_zone_db.query.id == zone_id,
                 )
                 bar.update(1)
-
-    healthcheck_db.sync_updated_on(sync_name="sync_hosted_zones")
 
 
 @click.command()
