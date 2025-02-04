@@ -1,3 +1,5 @@
+import datetime
+import unittest.mock
 import pytest
 
 from dns_api.api import app
@@ -24,5 +26,15 @@ def test_json_return_healthcheck(client):
 
 def test_json_format_healthcheck(client):
     """Testa formato de retorno JSON para o endpoint /healthcheck"""
-    response = client.get("/healthcheck")
-    assert response.json() == {"status": "ok"}
+    with unittest.mock.patch("tinydb.TinyDB") as mock_db:
+        expected_value = [
+            {
+                "sync_name": "sync_hosted_zones",
+                "updated_on": datetime.datetime.now().isoformat(),
+            }
+        ]
+        mock_db.return_value.all.return_value = expected_value
+
+        response = client.get("/healthcheck")
+
+        assert response.json() == {"status": "ok", "checks": expected_value}

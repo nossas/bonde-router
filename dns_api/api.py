@@ -20,11 +20,16 @@ app = FastAPI(lifespan=lifespan)
 
 @app.get("/healthcheck")
 async def healthcheck():
-    return {"status": "ok"}
+    from dns_api.db import Healthcheck
+
+    healthcheck_db = Healthcheck()
+    return {"status": "ok", "checks": healthcheck_db.db.all()}
 
 
 @app.get("/hosted-zones")
 @cache(expire=60)
 async def hosted_zones(external_group_id: str | None = None):
-    hosted_zones = Route53Client().list_hosted_zones(external_group_id=external_group_id)
+    hosted_zones = Route53Client().list_hosted_zones(
+        external_group_id=external_group_id
+    )
     return {"hosted_zones": hosted_zones}
