@@ -49,11 +49,25 @@ dns_api/
 ├── tests/            # Testes unitários
 │   ├── test_api_healthcheck.py
 │   └── ...
+├── .env.example      # Exemplo de variáveis de ambiente
+├── dns_cli.py        # Comandos para sincronização de dados
 ├── pyproject.toml    # Configuração do Poetry
 ├── README.md         # Documentação do projeto
-├── .env.example      # Exemplo de variáveis de ambiente
 └── ...
 ```
+
+## CLI
+
+Foi utilizado a biblioteca [click](https://click.palletsprojects.com/en/stable/) para criação de uma CLI. Você pode sempre chamar utilizando `python dns_cli.py [COMMAND]`, abaixo a lista de comandos:
+
+- `sync-hosted-zones` Sincroniza as Zonas de Hospedagem do Route 53 para o TinyDB (Base de dados local).
+- `update-hosted-zones` Atualiza Route53 com a tag ExternalGroupId de acordo com CSV (`--csvfile`) passado.
+
+    Exemplo de arquivo csv
+    ```csv
+    zone_id,name,external_group_id
+    /hostedzone/Z03535501MSN9R17CEXFD,meudomain.com.,659
+    ```
 
 ## Endpoints
 
@@ -74,7 +88,19 @@ dns_api/
     }
     ```
 
+# Informações úteis
 
+Primeira saída do comando de atualização das tags Bonde > Route53 (2025-02-04 11:18)
+
+```
+Atualizando  [##----------------------------------]    7%  00:01:11HostedZone temgentecomfome.com.br não encontrado: An error occurred (NoSuchHostedZone) when calling the ChangeTagsForResource operation: No hosted zone found with ID: Z08299121AAPDD5RD7VTZ
+Atualizando  [##################------------------]   51%  00:00:23HostedZone nossas.tec.br não encontrado: An error occurred (NoSuchHostedZone) when calling the ChangeTagsForResource operation: No hosted zone found with ID: Z06477672SR3T7T45E29C
+Atualizando  [#####################---------------]   58%  00:00:20HostedZone mapadoacolhimento.org.br não encontrado: An error occurred (NoSuchHostedZone) when calling the ChangeTagsForResource operation: No hosted zone found with ID: Z20DVY8WSZQG1E
+Atualizando  [#########################-----------]   72%  00:00:13HostedZone bonde.datad.at não encontrado: An error occurred (NoSuchHostedZone) when calling the ChangeTagsForResource operation: No hosted zone found with ID: Z0450040OQL7IUSSQXTY
+Atualizando  [################################----]   89%  00:00:05HostedZone virada.amazoniadepe.org.br não encontrado: An error occurred (NoSuchHostedZone) when calling the ChangeTagsForResource operation: No hosted zone found with ID: Z07920232OV5GQFPMKYK7
+Atualizando  [##################################--]   96%  00:00:01HostedZone votepeloclima.org não encontrado: An error occurred (NoSuchHostedZone) when calling the ChangeTagsForResource operation: No hosted zone found with ID: Z03535501MSN9R17CEXFD
+Atualizando  [####################################]  100%       
+```
 
 # O que será desenvolvido?
 

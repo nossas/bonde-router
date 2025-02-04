@@ -1,12 +1,8 @@
 import click
+import csv
 
 from dns_api.route53 import Route53Client
 from dns_api.db import HostedZone
-
-# with click.progressbar(range(total), label="Processando", file=None) as bar:
-#         for i in bar:
-#             time.sleep(0.1)  # Simulando um processo que demora 0.1 segundos por item
-#             bar.update(1)
 
 
 @click.command()
@@ -50,6 +46,46 @@ def sync_hosted_zones():
                 bar.update(1)
 
 
+@click.command()
+@click.option(
+    "--csvfile",
+    help="Caminho para o arquivo CSV utilizado na atualização. Formato: zone_id,name,external_group_id",
+)
+def update_hosted_zones(csvfile):
+    """Atualiza Route53 com a tag ExternalGroupId"""
+    route53 = Route53Client().route53
+    total = 0
+    with open(csvfile, mode="r", encoding="utf-8") as file:
+        # Ler o arquivo CSV como dicionário
+        total = sum(1 for _ in csv.DictReader(file)) - 1
+
+    with open(csvfile, mode="r", encoding="utf-8") as file:
+        reader = csv.DictReader(file)
+
+        with click.progressbar(
+            range(total),
+            label=f"Atualizando",
+            file=None,
+        ) as bar:
+            for row in reader:
+                try:
+                    # Atualiza a Zona de Hospedagem com Tag no Route53
+                    route53.change_tags_for_resource(
+                        ResourceType="hostedzone",
+                        ResourceId=row["zone_id"].split("/")[-1],
+                        AddTags=[
+                            {
+                                "Key": "ExternalGroupId",
+                                "Value": row["external_group_id"],
+                            }
+                        ],
+                    )
+                except route53.exceptions.NoSuchHostedZone as err:
+                    click.echo(f"HostedZone {row['name']} não encontrado: {err}")
+
+                bar.update(1)
+
+
 # Agrupando todos os comandos com um grupo principal
 @click.group()
 def cli():
@@ -58,6 +94,7 @@ def cli():
 
 # Registrando os comandos no grupo
 cli.add_command(sync_hosted_zones)
+cli.add_command(update_hosted_zones)
 
 # Rodando a aplicação de linha de comando
 if __name__ == "__main__":
