@@ -105,6 +105,40 @@ Foi utilizado a biblioteca [click](https://click.palletsprojects.com/en/stable/)
     }
     ```
 
+## Endpoints Traefik API
+
+- `/healthcheck`
+
+- `/create-router`
+
+    Criar configurações de roteamento no Traefik.
+
+    **Método:** POST
+
+    **Parâmetros:** `router.domain_name` (required), `router.service` (required)
+
+    **Resposta:**
+    ```json
+    {
+        "status": "ok"
+    }
+    ```
+
+- `/delete-router/{domain_name}`
+
+    Remove configurações de roteamento no Traefik.
+
+    **Método:** DELETE
+
+    **Parâmetros:** `domain_name` (required)
+
+    **Resposta:**
+    ```json
+    {
+        "status": "ok"
+    }
+    ```
+
 # Informações úteis
 
 Primeira saída do comando de atualização das tags Bonde > Route53 (2025-02-04 11:18)

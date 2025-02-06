@@ -97,7 +97,7 @@ def test_etcdclient_called_to_delete_router(client, mock_etcd_client):
     mock_etcd = unittest.mock.MagicMock()
     mock_etcd_client.return_value = mock_etcd
 
-    response = client.delete("/delete-router/test.custom.devel")
+    client.delete("/delete-router/test.custom.devel")
 
     mock_etcd.delete_range.assert_called()
 
@@ -107,7 +107,7 @@ def test_etcdclient_format_to_delete_router(client, mock_etcd_client):
     mock_etcd = unittest.mock.MagicMock()
     mock_etcd_client.return_value = mock_etcd
 
-    response = client.delete("/delete-router/test.custom.devel")
+    client.delete("/delete-router/test.custom.devel")
 
     mock_etcd.delete_range.assert_called_once_with(
         "traefik/http/routers/test-custom-devel", prefix=True
