@@ -7,7 +7,23 @@ services:
     volumes:
       - redis_data:/data
     command: ["redis-server", "--appendonly", "yes"]
+  
+  etcd:
+    image: 'bitnami/etcd:latest'
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
+      - ETCD_ENABLE_V2=true
+      - ETCDCTL_API=3
+    volumes:
+      - etcd:/bitnami/etcd
+    ports:
+      - "2379:2379"
+      - "2380:2380"
+    
 
 volumes:
   redis_data:
+    driver: local
+  etcd:
     driver: local

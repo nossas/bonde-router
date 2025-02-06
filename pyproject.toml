@@ -17,6 +17,7 @@ redis = "^5.2.1"
 tinydb = "^4.8.2"
 click = "^8.1.8"
 pydantic = "^2.10.6"
+etcd3-py = "^0.1.6"
 
 
 [tool.poetry.group.dev.dependencies]
