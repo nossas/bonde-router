@@ -44,6 +44,14 @@ async def create_router(router: Router):
     
     return {"status": "ok"}
 
+@app.delete("/delete-router/{domain_name}")
+async def delete_router(domain_name: str):
+    client = etcd3.Client("127.0.0.1", 2379)
+
+    router_key_name = domain_name.replace(".", "-")
+    client.delete_range(f"traefik/http/routers/{router_key_name}", prefix=True)
+
+    return {"status": "ok"}
 
 # etcdctl put traefik/http/routers/foraderrite-org/entrypoints "websecure"
 # etcdctl put traefik/http/routers/foraderrite-org/rule "HostRegexp(\`((www\.)?([a-z0-9-]+\.)?foraderrite\.(org))$\`)"
