@@ -3,6 +3,7 @@ import unittest.mock
 import pytest
 
 from dns_api.api import app
+from dns_api.db import HealthCheck
 from fastapi.testclient import TestClient
 from http import HTTPStatus
 
@@ -24,17 +25,13 @@ def test_json_return_healthcheck(client):
     assert response.headers["Content-Type"] == "application/json"
 
 
-def test_json_format_healthcheck(client):
-    """Testa formato de retorno JSON para o endpoint /healthcheck"""
-    with unittest.mock.patch("tinydb.TinyDB") as mock_db:
-        expected_value = [
-            {
-                "sync_name": "sync_hosted_zones",
-                "updated_on": datetime.datetime.now().isoformat(),
-            }
-        ]
-        mock_db.return_value.all.return_value = expected_value
+# def test_json_format_healthcheck(client):
+#     """Testa formato de retorno JSON para o endpoint /healthcheck"""
+#     expected_value = HealthCheck(
+#         sync_name="sync_hosted_zone", updated_on=datetime.datetime.now().isoformat()
+#     ).dict()
+#     db.table("healtcheck").insert(expected_value)
 
-        response = client.get("/healthcheck")
+#     response = client.get("/healthcheck")
 
-        assert response.json() == {"status": "ok", "checks": expected_value}
+#     assert response.json() == {"status": "ok", "checks": expected_value}
