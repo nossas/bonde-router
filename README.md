@@ -1,4 +1,6 @@
-# DNS API
+# Bonde Router
+
+Este projeto fornece um conjunto de APIs para gerenciar roteamentos na plataforma BONDE, integrando Traefik, Let's Encrypt e Route53. Ele automatiza a criação e manutenção de domínios, certificados SSL e regras de tráfego, garantindo escalabilidade e segurança para aplicações distribuídas.
 
 ## Instalação e Configuração
 
@@ -27,8 +29,16 @@ Edite o arquivo `.env` conforme necessário.
 
 ### Executando o projeto
 
+DNS API
+
 ```sh
 poetry run uvicorn --reload dns_api.api:app
+```
+
+Traefik API
+
+```sh
+poetry run uvicorn --reload traefik_api.api:app
 ```
 
 ### Testes
@@ -40,14 +50,21 @@ poetry run pytest
 ### Estrutura do projeto
 
 ```
-dns_api/
-├── dns_api/  # Código-fonte principal
+bonde-router/
+├── dns_api/  # Código-fonte principal da API de DNS
 │   ├── api.py
 │   ├── route53.py
 │   ├── settings.py
 │   └── ...
-├── tests/            # Testes unitários
+├── tests_dns/            # Testes unitários
 │   ├── test_api_healthcheck.py
+│   └── ...
+├── tests_traefik/        # Testes unitários
+│   ├── test_api_healthcheck.py
+│   └── ...
+├── traefik_api/  # Código-fonte principal da API pro Traefik
+│   ├── api.py
+│   ├── models.py
 │   └── ...
 ├── .env.example      # Exemplo de variáveis de ambiente
 ├── dns_cli.py        # Comandos para sincronização de dados
@@ -69,7 +86,7 @@ Foi utilizado a biblioteca [click](https://click.palletsprojects.com/en/stable/)
     /hostedzone/Z03535501MSN9R17CEXFD,meudomain.com.,659
     ```
 
-## Endpoints
+## Endpoints DNS API
 
 - `/healthcheck`
 
