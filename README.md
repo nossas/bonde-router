@@ -35,12 +35,6 @@ DNS API
 poetry run uvicorn --reload dns_api.api:app
 ```
 
-Traefik API
-
-```sh
-poetry run uvicorn --reload traefik_api.api:app
-```
-
 ### Testes
 
 ```sh
@@ -59,15 +53,9 @@ bonde-router/
 ├── tests_dns/            # Testes unitários
 │   ├── test_api_healthcheck.py
 │   └── ...
-├── tests_traefik/        # Testes unitários
-│   ├── test_api_healthcheck.py
-│   └── ...
-├── traefik_api/  # Código-fonte principal da API pro Traefik
-│   ├── api.py
-│   ├── models.py
-│   └── ...
 ├── .env.example      # Exemplo de variáveis de ambiente
 ├── dns_cli.py        # Comandos para sincronização de dados
+├── check_domains.py  # Script para verificar configurações do domínio
 ├── pyproject.toml    # Configuração do Poetry
 ├── README.md         # Documentação do projeto
 └── ...
@@ -86,6 +74,37 @@ Foi utilizado a biblioteca [click](https://click.palletsprojects.com/en/stable/)
     /hostedzone/Z03535501MSN9R17CEXFD,meudomain.com.,659
     ```
 
+- `python check_domains.py` Confere configurações de domínios passados por um arquivo `input.csv` resultado é salvo em um arquivo `output.csv`, deve-se configurar a váriavel de ambiente `SERVER_IP`
+
+    Exemplo de arquivo input.csv
+    ```csv
+    id,name,slug,custom_domain,root_domain
+    1357,¿Dónde están los 200 mil millones de pesos?,"200milmillones",www.200milmillones.com,"200milmillones.com"
+    714,#AconteceuNoCarnaval,aconteceunocarnaval,www.aconteceunocarnaval.org,aconteceunocarnaval.org
+    ```
+
+    Considere montar o arquivo de input de forma ordenada por `root_domain` abaixo um exemplo de SQL para gerar o arquivo:
+    ```sql
+    select *
+    from (
+        select
+            m.id,
+            m.name,
+            m.slug,
+            m.custom_domain,
+            regexp_replace(
+                m.custom_domain,
+                '^(?:.*?\.)?([^\.]+\.(?:org\.br|org|com\.br|com|com\.mx|org\.mx|biz|tk|net|me|co|site|tec.br|online))$',
+                '\1'
+            ) as root_domain
+        from mobilizations m
+        where m.status = 'active'
+        and m.custom_domain is not null
+        order by m.id
+    ) as sq
+    order by sq.root_domain
+    ```
+
 ## Endpoints DNS API
 
 - `/healthcheck`
@@ -102,40 +121,6 @@ Foi utilizado a biblioteca [click](https://click.palletsprojects.com/en/stable/)
     ```json
     {
         "hosted_zones": []
-    }
-    ```
-
-## Endpoints Traefik API
-
-- `/healthcheck`
-
-- `/create-router`
-
-    Criar configurações de roteamento no Traefik.
-
-    **Método:** POST
-
-    **Parâmetros:** `router.domain_name` (required), `router.service` (required)
-
-    **Resposta:**
-    ```json
-    {
-        "status": "ok"
-    }
-    ```
-
-- `/delete-router/{domain_name}`
-
-    Remove configurações de roteamento no Traefik.
-
-    **Método:** DELETE
-
-    **Parâmetros:** `domain_name` (required)
-
-    **Resposta:**
-    ```json
-    {
-        "status": "ok"
     }
     ```
 
