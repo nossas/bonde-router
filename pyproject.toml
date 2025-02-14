@@ -18,6 +18,8 @@ tinydb = "^4.8.2"
 click = "^8.1.8"
 pydantic = "^2.10.6"
 etcd3-py = "^0.1.6"
+dnspython = "^2.7.0"
+celery = "^5.4.0"
 
 
 [tool.poetry.group.dev.dependencies]

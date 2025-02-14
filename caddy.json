@@ -1,0 +1,116 @@
+{
+    "admin": {
+        "listen": "0.0.0.0:2019"
+    },
+    "apps": {
+        "http": {
+            "servers": {
+                "srv0": {
+                    "listen": [
+                        ":80",
+                        ":443"
+                    ],
+                    "routes": [
+                        {
+                            "@id": "route.bonde.public",
+                            "handle": [
+                                {
+                                    "handler": "reverse_proxy",
+                                    "upstreams": [
+                                        {
+                                            "dial": "public:3000"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "match": [
+                                {
+                                    "host": []
+                                }
+                            ]
+                        },
+                        {
+                            "handle": [
+                                {
+                                    "handler": "reverse_proxy",
+                                    "upstreams": [
+                                        {
+                                            "dial": "api-graphql:8080"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "match": [
+                                {
+                                    "host": [
+                                        "api-graphql.bonde.devel"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "handle": [
+                                {
+                                    "handler": "reverse_proxy",
+                                    "upstreams": [
+                                        {
+                                            "dial": "api-accounts:4001"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "match": [
+                                {
+                                    "host": [
+                                        "api-accounts.bonde.devel"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "handle": [
+                                {
+                                    "handler": "reverse_proxy",
+                                    "upstreams": [
+                                        {
+                                            "dial": "public:3000"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "match": [
+                                {
+                                    "host": [
+                                        "bonde.devel",
+                                        "*.bonde.devel"
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "tls": {
+            "automation": {
+                "policies": [
+                    {
+                        "@id": "policy.bonde.ssl",
+                        "issuers": [
+                            {
+                                "ca": "",
+                                "lifetime": 0,
+                                "module": "internal",
+                                "sign_with_root": false
+                            }
+                        ],
+                        "subjects": [
+                            "*.bonde.devel",
+                            "bonde.devel"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}

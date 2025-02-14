@@ -1,29 +1,99 @@
 services:
-  redis:
-    image: redis:7
+  caddy:
+    image: nossas/caddy
+    platform: linux/amd64
+    container_name: caddy
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "80:80"
+      - "443:443"
+      - "2019:2019"
+    networks:
+      - caddy_network
     volumes:
-      - redis_data:/data
-    command: ["redis-server", "--appendonly", "yes"]
-  
-  etcd:
-    image: 'bitnami/etcd:latest'
+      - ./data/caddy:/etc/caddy
+      - caddy_data:/data
+      - caddy_config:/config
+      - /var/run/docker.sock:/var/run/docker.sock # Necessário para Caddy detectar os serviços
     environment:
-      - ALLOW_NONE_AUTHENTICATION=yes
-      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
-      - ETCD_ENABLE_V2=true
-      - ETCDCTL_API=3
-    volumes:
-      - etcd:/bitnami/etcd
+      - CADDY_ADMIN=0.0.0.0:2019
+    #   - CADDY_EMAIL=seu-email@example.com  # Para receber notificações do Let's Encrypt
+
+  redis:
+    image: redis
+    # --requirepass Redis2019!
+    command: redis-server
     ports:
-      - "2379:2379"
-      - "2380:2380"
-    
+      - "6379:6379"
+    networks:
+      - caddy_network
+
+  public:
+    image: nossas/bonde-public:latest
+    container_name: public
+    platform: linux/amd64
+    command: pnpm --filter webpage-client start
+    restart: "${DOCKER_RESTART_POLICY:-unless-stopped}"
+    pull_policy: always
+    networks:
+      - caddy_network
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - ACTION_SECRET_KEY=segredo123
+      - REACT_APP_API_GRAPHQL_SECRET=segredo123
+      - REACT_APP_PAGARME_KEY=xxx
+      - REACT_APP_DOMAIN_API_ACTIVISTS=http://api-graphql:8080/v1/graphql
+      - REACT_APP_DOMAIN_API_GRAPHQL=http://api-graphql:8080/v1/graphql
+      - REACT_APP_DOMAIN_API_REST=https://api-rest.staging.bonde.org
+      - REACT_APP_DOMAIN_PUBLIC=bonde.devel
+      - REACT_APP_ACTIVE_API_CACHE=false
+      # - REACT_APP_DOMAIN_IMAGINARY=${PUBLIC_DOMAIN_IMAGINARY:-http://imaginary.bonde.devel}
+
+  api-graphql:
+    image: hasura/graphql-engine:v2.44.0
+    container_name: api-graphql
+    environment:
+      - HASURA_GRAPHQL_DATABASE_URL=${BONDE_DATABASE_URL:-postgres://user:pass@postgres:5432/bonde}
+      - HASURA_GRAPHQL_ENABLE_CONSOLE=true
+      - HASURA_GRAPHQL_ADMIN_SECRET=segredo123
+      - HASURA_GRAPHQL_JWT_SECRET=${HASURA_GRAPHQL_JWT_SECRET}
+      - HASURA_GRAPHQL_UNAUTHORIZED_ROLE=anonymous
+      - HASURA_GRAPHQL_LOG_LEVEL=debug
+      - HASURA_GRAPHQL_CORS_DOMAIN=*
+      - API_ACCOUNTS_URL=http://api-accounts:4001
+      - PORT=8080
+    restart: always
+    pull_policy: always
+    networks:
+      - caddy_network
+
+  api-accounts:
+    image: nossas/bonde-apis:v1.6.0
+    container_name: api-accounts
+    platform: linux/amd64
+    environment:
+      ACCOUNTS_REGISTER_URL: https://accounts.bonde.devel/register
+      GRAPHQL_HTTP_URL: http://api-graphql:8080/v1/graphql
+      APP_DOMAIN: bonde.devel
+      HASURA_SECRET: segredo123
+      HOST: 0.0.0.0
+      JWT_SECRET: ${JWT_SECRET}
+      LOG_LEVEL: debug
+      PORT: '4001'
+    command:
+      - pnpm
+      - --filter
+      - accounts-api
+      - start
+    restart: always
+    pull_policy: always
+    networks:
+      - caddy_network
+
+networks:
+  caddy_network:
 
 volumes:
-  redis_data:
-    driver: local
-  etcd:
-    driver: local
+  caddy_data:
+  caddy_config:
