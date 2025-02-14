@@ -1,6 +1,6 @@
 # Bonde Router
 
-Este projeto fornece um conjunto de APIs para gerenciar roteamentos na plataforma BONDE, integrando Traefik, Let's Encrypt e Route53. Ele automatiza a criação e manutenção de domínios, certificados SSL e regras de tráfego, garantindo escalabilidade e segurança para aplicações distribuídas.
+Este projeto fornece um conjunto de APIs para gerenciar roteamentos na plataforma BONDE, integrando Caddy, Let's Encrypt/ZeroSSL e Route53. Ele automatiza a criação e manutenção de domínios, certificados SSL e regras de tráfego, garantindo escalabilidade e segurança para aplicações distribuídas.
 
 ## Instalação e Configuração
 
@@ -17,19 +17,54 @@ Antes de começar, certifique-se de ter instalado:
 poetry install
 ```
 
-### Configuração do ambiente
+### Configuração do Ambiente
 
-Copie o arquivo `.env.example` e configure as variáveis de ambiente:
+#### Configurando o Docker Compose para Desenvolvimento
+
+1. Copie o arquivo `.env.example` e configure as variáveis de ambiente conforme necessário:
 
 ```sh
-cp .env.example dns_api/.env
+cp .env.example .env
 ```
 
-Edite o arquivo `.env` conforme necessário.
+2. Crie uma pasta `data/caddy/` na raiz do repositório e copie a configuração inicial do Caddy:
 
-### Executando o projeto
+```sh
+mkdir -p data/caddy
+cp caddy.json data/caddy/
+```
 
-DNS API
+#### Configurando a API DNS
+
+Copie o arquivo `dns_api/.env.example` e configure as variáveis de ambiente conforme necessário:
+
+```sh
+cp dns_api/.env.example dns_api/.env
+```
+
+### Executando o Projeto
+
+#### Estrutura de Desenvolvimento com Docker Compose
+
+```sh
+docker compose up -d --build
+```
+
+Para executar a validação dos seus certificados localmente, siga a documentação do Caddy (https://caddyserver.com/docs/running#local-https-with-docker).
+
+#### Iniciando a API Caddy
+
+```sh
+poetry run uvicorn caddy_api.api:app --reload
+```
+
+#### Iniciando o Celery
+
+```sh
+poetry run celery -A caddy_api.manager.celery_app.app worker --loglevel=info
+```
+
+#### Iniciando a API DNS
 
 ```sh
 poetry run uvicorn --reload dns_api.api:app
@@ -37,94 +72,168 @@ poetry run uvicorn --reload dns_api.api:app
 
 ### Testes
 
+Execute os testes utilizando o comando:
+
 ```sh
 poetry run pytest
 ```
 
-### Estrutura do projeto
+## Estrutura do Projeto
 
-```
+```plaintext
 bonde-router/
-├── dns_api/  # Código-fonte principal da API de DNS
+├── caddy_api/              # Código-fonte principal da API Caddy
+│   ├── manager/            # Código-fonte do gerenciador Caddy
+│   │   ├── caddy_utils.py  # Funções para atualizar configurações do Caddy e persistir no arquivo JSON
+│   │   ├── tasks.py        # Tarefas para gerenciar disponibilidade de operações no Caddy com Redis e Celery
+│   │   └── ...
+│   ├── api.py              # API principal exposta para realizar operações no Caddy
+│   ├── settings.py
+│   └── ...
+├── dns_api/                # Código-fonte principal da API de DNS
 │   ├── api.py
 │   ├── route53.py
 │   ├── settings.py
 │   └── ...
-├── tests_dns/            # Testes unitários
+├── tests_dns/              # Testes unitários
 │   ├── test_api_healthcheck.py
 │   └── ...
-├── .env.example      # Exemplo de variáveis de ambiente
-├── dns_cli.py        # Comandos para sincronização de dados
-├── check_domains.py  # Script para verificar configurações do domínio
-├── pyproject.toml    # Configuração do Poetry
-├── README.md         # Documentação do projeto
+├── .env.example            # Exemplo de variáveis de ambiente
+├── dns_cli.py              # Comandos para sincronização de dados
+├── check_domains.py        # Script para verificar configurações do domínio
+├── pyproject.toml          # Configuração do Poetry
+├── README.md               # Documentação do projeto
 └── ...
 ```
 
 ## CLI
 
-Foi utilizado a biblioteca [click](https://click.palletsprojects.com/en/stable/) para criação de uma CLI. Você pode sempre chamar utilizando `python dns_cli.py [COMMAND]`, abaixo a lista de comandos:
+Este projeto utiliza a biblioteca [Click](https://click.palletsprojects.com/en/stable/) para criação de uma CLI. Você pode sempre chamar utilizando `python dns_cli.py [COMMAND]`. Abaixo está a lista de comandos:
 
-- `sync-hosted-zones` Sincroniza as Zonas de Hospedagem do Route 53 para o TinyDB (Base de dados local).
-- `update-hosted-zones` Atualiza Route53 com a tag ExternalGroupId de acordo com CSV (`--csvfile`) passado.
+### `sync-hosted-zones`
 
-    Exemplo de arquivo csv
-    ```csv
-    zone_id,name,external_group_id
-    /hostedzone/Z03535501MSN9R17CEXFD,meudomain.com.,659
-    ```
+Sincroniza as Zonas de Hospedagem do Route 53 para o TinyDB (base de dados local).
 
-- `python check_domains.py` Confere configurações de domínios passados por um arquivo `input.csv` resultado é salvo em um arquivo `output.csv`, deve-se configurar a váriavel de ambiente `SERVER_IP`
+### `update-hosted-zones`
 
-    Exemplo de arquivo input.csv
-    ```csv
-    id,name,slug,custom_domain,root_domain
-    1357,¿Dónde están los 200 mil millones de pesos?,"200milmillones",www.200milmillones.com,"200milmillones.com"
-    714,#AconteceuNoCarnaval,aconteceunocarnaval,www.aconteceunocarnaval.org,aconteceunocarnaval.org
-    ```
+Atualiza o Route53 com a tag `ExternalGroupId` de acordo com o CSV (`--csvfile`) fornecido.
 
-    Considere montar o arquivo de input de forma ordenada por `root_domain` abaixo um exemplo de SQL para gerar o arquivo:
-    ```sql
-    select *
-    from (
-        select
-            m.id,
-            m.name,
-            m.slug,
+**Exemplo de Arquivo CSV**
+
+```csv
+zone_id,name,external_group_id
+/hostedzone/Z03535501MSN9R17CEXFD,meudomain.com.,659
+```
+
+### `python check_domains.py`
+
+Confere configurações de domínios passados por um arquivo `input.csv`. O resultado é salvo em um arquivo `output.csv`. Configure a variável de ambiente `SERVER_IP`.
+
+**Exemplo de Arquivo input.csv**
+
+```csv
+id,name,slug,custom_domain,root_domain
+1357,Dónde están los 200 mil millones de pesos?,200milmillones,www.200milmillones.com,200milmillones.com
+714,#AconteceuNoCarnaval,aconteceunocarnaval,www.aconteceunocarnaval.org,aconteceunocarnaval.org
+```
+
+Considere montar o arquivo de input de forma ordenada por `root_domain`. Abaixo um exemplo de SQL para gerar o arquivo:
+
+```sql
+SELECT *
+FROM (
+    SELECT
+        m.id,
+        m.name,
+        m.slug,
+        m.custom_domain,
+        REGEXP_REPLACE(
             m.custom_domain,
-            regexp_replace(
-                m.custom_domain,
-                '^(?:.*?\.)?([^\.]+\.(?:org\.br|org|com\.br|com|com\.mx|org\.mx|biz|tk|net|me|co|site|tec.br|online))$',
-                '\1'
-            ) as root_domain
-        from mobilizations m
-        where m.status = 'active'
-        and m.custom_domain is not null
-        order by m.id
-    ) as sq
-    order by sq.root_domain
-    ```
+            '^(?:.*?\.)?([^\.]+\.(?:org\.br|org|com\.br|com|com\.mx|org\.mx|biz|tk|net|me|co|site|tec.br|online))$',
+            '\1'
+        ) AS root_domain
+    FROM mobilizations m
+    WHERE m.status = 'active'
+      AND m.custom_domain IS NOT NULL
+    ORDER BY m.id
+) AS sq
+ORDER BY sq.root_domain;
+```
 
 ## Endpoints DNS API
 
-- `/healthcheck`
+### `/healthcheck`
 
-- `/hosted-zones`
-    
-    Recupera uma lista de Zona de Hospedagem de acordo com o `ExternalGroupId` configurado em suas Tags. Caso parâmetro não seja pasado retorna uma lista vazia.
-    
-    **Método:** GET
+Verifica a saúde do sistema.
 
-    **Parâmetros:** `external_group_id` (optional)
-    
-    **Resposta:**
-    ```json
-    {
-        "hosted_zones": []
-    }
-    ```
+### `/hosted-zones`
 
-# Informações úteis
+Recupera uma lista de Zonas de Hospedagem de acordo com o `ExternalGroupId` configurado em suas Tags. Caso o parâmetro não seja passado, retorna uma lista vazia.
+
+**Método:** GET
+
+**Parâmetros:** `external_group_id` (opcional)
+
+**Exemplo de Resposta:**
+
+```json
+{
+    "hosted_zones": []
+}
+```
+
+## Endpoints Caddy API
+
+### `/add-operation`
+
+Enfilera uma operação de adicionar ou remover domínio das configurações do Caddy. Funciona de maneira assíncrona.
+
+**Método:** POST
+
+**Parâmetros:**
+- `domains`: Lista de domínios.
+- `operation`: Operação a ser realizada (`append` ou `remove`).
+
+**Exemplo de Resposta:**
+
+```json
+{
+    "message": "Operação adicionada à fila"
+}
+```
+
+### `/process-update`
+
+Dispara a task para processar a atualização das configurações da fila no Caddy. Funciona de maneira assíncrona.
+
+**Método:** POST
+
+**Exemplo de Resposta:**
+
+```json
+{
+    "message": "",
+    "task_id": ""
+}
+```
+
+### `/task-status/{task_id}`
+
+Consulta o resultado da tarefa enviada para o processamento no Celery.
+
+**Método:** GET
+
+**Exemplo de Resposta:**
+
+```json
+{
+    "status": "PENDING" | "SUCCESS" | "FAILURE" | "UNKNOWN",
+    "result": {},
+    "error": ""
+}
+```
+
+## Informações úteis
 
 Primeira saída do comando de atualização das tags Bonde > Route53 (2025-02-04 11:18)
 
@@ -138,7 +247,7 @@ Atualizando  [##################################--]   96%  00:00:01HostedZone vo
 Atualizando  [####################################]  100%       
 ```
 
-# O que será desenvolvido?
+## O que será desenvolvido?
 
 Será desenvolvido uma aplicação capaz de fazer chamadas no Route53 para listar, alterar, adicionar e remover Zonas de Hospedagem e Registros, com uma camada de de cachê para evitar chamadas excessivas na API do Route53.
 

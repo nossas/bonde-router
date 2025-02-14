@@ -114,6 +114,8 @@ async def add_pending_operation(
 
     :param operation: "append" ou "remove".
     :param domains: Lista de domínios para adicionar ou remover.
+    :param max_retries: Número de tentativas caso operação esteja bloqueada, padrão 5.
+    :param retry_delay: Tempo de espera em segundos entre as tentativas, padrão 2.
     """
     retries = 0
     while retries < max_retries:
