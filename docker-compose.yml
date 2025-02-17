@@ -62,6 +62,7 @@ services:
       - HASURA_GRAPHQL_LOG_LEVEL=debug
       - HASURA_GRAPHQL_CORS_DOMAIN=*
       - API_ACCOUNTS_URL=http://api-accounts:4001
+      - API_ROUTER_URL=http://host.docker.internal:8000
       - PORT=8080
     restart: always
     pull_policy: always

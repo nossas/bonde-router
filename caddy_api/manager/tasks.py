@@ -46,14 +46,16 @@ def consolidate_operations():
 
 
 # Task do Celery para processar alterações
-@celery.task(bind=True, max_retries=3, name="caddy_api.manager.tasks.process_caddy_update")
+@celery.task(
+    bind=True, max_retries=3, name="caddy_api.manager.tasks.process_caddy_update"
+)
 def process_caddy_update(self):
     try:
         # Consolidar operações pendentes
         domains_to_add, domains_to_remove = consolidate_operations()
 
         if not domains_to_add and not domains_to_remove:
-            return "Nenhuma operação pendente."
+            return {"message": "Nenhuma operação pendente."}
 
         # Carregar configuração atual
         config = load_config()

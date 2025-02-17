@@ -15,6 +15,7 @@ app.conf.worker_max_tasks_per_child = 100
 app.conf.task_annotations = {
     "*": {"rate_limit": "1/s"}
 }  # Rate limit de 1 tarefa por segundo
+app.conf.result_expires = 3600  # Resultados são apagados 1 hora após a conclusão
 
 
 # Descobrir e registrar tarefas nos módulos especificados

@@ -30,6 +30,7 @@ def validate_authentication(request: Request) -> DecodedToken:
 
     :param request: Requisição HTTP, deve possuir Header Auhorization ou Cookie session.
     """
+    # import ipdb;ipdb.set_trace()
     jwt_token = None
     auth_header = request.headers.get("Authorization")
     session_cookie = request.cookies.get("session")
@@ -46,7 +47,7 @@ def validate_authentication(request: Request) -> DecodedToken:
 
     try:
         # Decodifica o JWT
-        return DecodedToken(
+        decoded_token = DecodedToken(
             **jwt.decode(
                 jwt_token,
                 settings.JWT_SECRET,
@@ -54,6 +55,8 @@ def validate_authentication(request: Request) -> DecodedToken:
                 audience=settings.JWT_AUDIENCE,
             )
         )
+
+        return decoded_token
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Expired JWT token")
     except jwt.InvalidTokenError:

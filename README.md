@@ -207,6 +207,8 @@ Authorization: Bearer <seu_token_aqui>
 Cookie: session=<seu_token_aqui>
 ```
 
+Você pode integrar sua API com o BONDE utilizando o Hasura Actions (`/add-operation` e `/task-status`) e Hasura Events (`/process-update`).
+
 ---
 
 ### `/add-operation`
