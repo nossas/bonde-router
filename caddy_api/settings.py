@@ -9,7 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
-CONFIG_FILE_PATH = BASE_DIR / "data/caddy/caddy.json"
+CONFIG_FILE_PATH = os.getenv("CADDY_CONFIG_FILE_PATH", BASE_DIR / "data/caddy/caddy.json")
 
 JWT_SECRET = os.getenv("JWT_SECRET")
 
