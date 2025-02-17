@@ -34,6 +34,14 @@ mkdir -p data/caddy
 cp caddy.json data/caddy/
 ```
 
+#### Configurando a API Caddy
+
+Copie o arquivo `caddy_api/.env.example` e configure as variáveis de ambiente conforme necessário:
+
+```sh
+cp caddy_api/.env.example caddy_api/.env
+```
+
 #### Configurando a API DNS
 
 Copie o arquivo `dns_api/.env.example` e configure as variáveis de ambiente conforme necessário:
@@ -87,6 +95,7 @@ bonde-router/
 │   │   ├── caddy_utils.py  # Funções para atualizar configurações do Caddy e persistir no arquivo JSON
 │   │   ├── tasks.py        # Tarefas para gerenciar disponibilidade de operações no Caddy com Redis e Celery
 │   │   └── ...
+|   ├── .env.example        # Exemplo de variáveis de ambiente
 │   ├── api.py              # API principal exposta para realizar operações no Caddy
 │   ├── settings.py
 │   └── ...
@@ -183,6 +192,22 @@ Recupera uma lista de Zonas de Hospedagem de acordo com o `ExternalGroupId` conf
 ```
 
 ## Endpoints Caddy API
+
+### Informações Gerais
+
+Todos os endpoints requerem autenticação. A autenticação pode ser feita utilizando o cabeçalho `Authorization` com um token de acesso válido, ou enviando um `Cookie` contendo as credenciais de autenticação.
+
+**Exemplo de Cabeçalho:**
+```http
+Authorization: Bearer <seu_token_aqui>
+```
+
+**Exemplo de Cooke:**
+```http
+Cookie: session=<seu_token_aqui>
+```
+
+---
 
 ### `/add-operation`
 

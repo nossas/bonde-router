@@ -2,12 +2,14 @@ import asyncio
 from celery.result import AsyncResult
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, Request
+from fastapi.responses import JSONResponse
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from redis import asyncio as aioredis
 from pydantic import BaseModel
 
+from caddy_api.auth import validate_authentication, DecodedToken
 from caddy_api.manager.tasks import add_pending_operation, process_caddy_update
 
 
@@ -24,6 +26,12 @@ MAX_RETRIES = 5  # Número máximo de tentativas
 RETRY_DELAY = 2  # Delay entre as tentativas em segundos
 
 
+@app.exception_handler(HTTPException)
+async def hasura_http_exception_handler(request: Request, exc: HTTPException):
+    # Reformatar o corpo de resposta com a chave "message"
+    return JSONResponse(status_code=exc.status_code, content={"message": exc.detail})
+
+
 # Modelo para as requisições de operações
 class OperationRequest(BaseModel):
     operation: str  # Pode ser "append" ou "remove"
@@ -32,7 +40,11 @@ class OperationRequest(BaseModel):
 
 # Endpoint para adicionar operações pendentes
 @app.post("/add-operation")
-async def add_operation(request: OperationRequest, background_tasks: BackgroundTasks):
+async def add_operation(
+    request: OperationRequest,
+    background_tasks: BackgroundTasks,
+    decoded_toke: DecodedToken = Depends(validate_authentication),
+):
     if request.operation not in ["append", "remove"]:
         raise HTTPException(
             status_code=400, detail="Operação inválida. Use 'append' ou 'remove'."
@@ -53,7 +65,10 @@ async def add_operation(request: OperationRequest, background_tasks: BackgroundT
 
 # Endpoint para processar o update no Caddy com rate limiting
 @app.post("/process-update")
-async def process_update(background_tasks: BackgroundTasks):
+async def process_update(
+    background_tasks: BackgroundTasks,
+    decoded_toke: DecodedToken = Depends(validate_authentication),
+):
     """
     Dispara a task para processar a atualização do Caddy.
     """
@@ -65,7 +80,9 @@ async def process_update(background_tasks: BackgroundTasks):
 
 # Endpoint para verificar o status de uma task
 @app.get("/task-status/{task_id}")
-async def get_task_status(task_id: str):
+async def get_task_status(
+    task_id: str, decoded_toke: DecodedToken = Depends(validate_authentication)
+):
     task_result = AsyncResult(task_id)
     if task_result.state == "PENDING":
         return {"status": "PENDING"}
