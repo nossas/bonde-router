@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "dns-api"
+name = "bonde-router"
 version = "0.1.0"
 description = ""
 authors = ["Igor Santos <igr.exe@gmail.com>"]
