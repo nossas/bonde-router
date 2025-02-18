@@ -1,10 +1,13 @@
 from celery import Celery
+from caddy_api import settings
 
 # Configuração do Celery com Redis
+REDIS_URL = f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/0"
+
 app = Celery(
     "caddy_manager",
-    broker="redis://localhost:6379/0",
-    backend="redis://localhost:6379/0",
+    broker=REDIS_URL,
+    backend=REDIS_URL,
 )
 
 # Configuração Celery (opcional: para controlar retries, timeouts, etc.)

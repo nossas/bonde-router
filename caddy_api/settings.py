@@ -17,5 +17,9 @@ JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
 
 JWT_AUDIENCE = os.getenv("JWT_AUDIENCE")
 
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+
+REDIS_PORT = os.getenv("REDIS_PORT", 6379)
+
 # AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 # AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
