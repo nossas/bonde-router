@@ -11,6 +11,8 @@ DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
 CONFIG_FILE_PATH = os.getenv("CADDY_CONFIG_FILE_PATH", BASE_DIR / "data/caddy/caddy.json")
 
+CADDY_API_URL = os.getenv("CADDY_API_URL", "http://localhost:2019")
+
 JWT_SECRET = os.getenv("JWT_SECRET")
 
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
