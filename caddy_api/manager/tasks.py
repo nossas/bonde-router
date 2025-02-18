@@ -26,15 +26,19 @@ def consolidate_operations():
 
                 # Decodifica a operação (json)
                 operation, domains = json.loads(operation_data)
-                domain_list = set(domains)
+                domain_operations = dict()
 
-                if operation == "append":
-                    domains_to_add.update(domain_list)
-                elif operation == "remove":
-                    domains_to_remove.update(domain_list)
+                for domain in domains:
+                    # Registra a última operação do domínio
+                    domain_operations[domain] = operation
 
-            # Resolver conflitos: domínios para remover não podem estar na lista de adicionar
-            domains_to_add -= domains_to_remove
+            # Inicializar listas para adicionar e remover com base nas operações finais
+            domains_to_add = {
+                domain for domain, op in domain_operations.items() if op == "append"
+            }
+            domains_to_remove = {
+                domain for domain, op in domain_operations.items() if op == "remove"
+            }
 
         finally:
             # Libera o lock
