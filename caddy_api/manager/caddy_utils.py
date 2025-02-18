@@ -1,10 +1,7 @@
 import json
 import requests
 
-from caddy_api.settings import CONFIG_FILE_PATH
-
-# Configurações
-CADDY_API_URL = "http://localhost:2019"
+from caddy_api.settings import CONFIG_FILE_PATH, CADDY_API_URL
 
 
 # Função para carregar a configuração do arquivo JSON
