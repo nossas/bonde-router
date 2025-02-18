@@ -134,9 +134,21 @@ zone_id,name,external_group_id
 /hostedzone/Z03535501MSN9R17CEXFD,meudomain.com.,659
 ```
 
-### `python check_domains.py`
+### `python check_domains_cli.py`
 
-Confere configurações de domínios passados por um arquivo `input.csv`. O resultado é salvo em um arquivo `output.csv`. Configure a variável de ambiente `SERVER_IP`.
+Confere configurações de domínios passados por um arquivo, que pode ser chamado opcionalmente de `input.csv`. O resultado é salvo em um arquivo de saída, como `output.csv`. Lembre-se de configurar a variável de ambiente `SERVER_IP` em sua linha de comando: `export SERVER_IP='0.0.0.0'`.
+
+**Comando para checar os domínios**
+
+```bash
+python check_domains.py check-domains --csvfile input.csv --output output.csv --statefile progress.json
+```
+
+**Comando para checar os certificados SSL**
+
+```bash
+python check_domains.py check-ssl --csvfile input.csv --output ssl_output.csv
+```
 
 **Exemplo de Arquivo input.csv**
 
