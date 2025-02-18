@@ -1,7 +1,7 @@
 from redis import StrictRedis
 
-REDIS_HOST = "localhost"
-REDIS_PORT = 6379
+from caddy_api import settings
+
 
 # Inicializar Redis
-client = StrictRedis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+client = StrictRedis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, decode_responses=True)
