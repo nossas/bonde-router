@@ -32,3 +32,6 @@ archive.zip
 
 # Database files
 data/
+
+# log
+domain_check.log

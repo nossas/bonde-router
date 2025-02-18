@@ -4,6 +4,8 @@ import dns.resolver
 import os
 import json
 import logging
+import click
+import ssl
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', filename='domain_check.log', filemode='a')
@@ -128,13 +130,72 @@ def process_csv(input_file, output_file, state_file):
             # Write the updated row
             writer.writerow(row)
 
-if __name__ == '__main__':
-    input_csv = 'input.csv'
-    output_csv = 'output.csv'
-    state_file = 'progress.json'
+def check_ssl_certificate(domain):
+    try:
+        hostname = domain.split('//')[1].split('/')[0]
+        context = ssl.create_default_context()
+        with socket.create_connection((hostname, 443), timeout=10) as sock:
+            with context.wrap_socket(sock, server_hostname=hostname) as ssock:
+                cert = ssock.getpeercert()
+                return bool(cert)
+    except (ssl.SSLError, socket.gaierror, IndexError, ConnectionRefusedError, socket.timeout):
+        return False
+
+def process_ssl_csv(input_file, output_file):
+    with open(input_file, 'r') as infile, open(output_file, 'w', newline='') as outfile:
+        reader = csv.DictReader(infile)
+        fieldnames = reader.fieldnames + ['has_ssl_certificate']
+        writer = csv.DictWriter(outfile, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for row in reader:
+            root_domain = row['root_domain']
+            custom_domain = row['custom_domain']
+
+            try:
+                logging.info(f"Checking SSL certificate for domain: {root_domain}")
+                has_ssl_root = check_ssl_certificate(f"https://{root_domain}")
+                has_ssl_custom = check_ssl_certificate(f"https://{custom_domain}") if custom_domain else False
+
+                # Update row with results
+                row.update({
+                    'has_ssl_certificate': has_ssl_root or has_ssl_custom
+                })
+
+            except Exception as e:
+                logging.error(f"Error checking SSL certificate for domain {root_domain}: {e}")
+                row.update({
+                    'has_ssl_certificate': False
+                })
+
+            # Write the updated row
+            writer.writerow(row)
+
+@click.group()
+def cli():
+    pass
+
+@cli.command()
+@click.option('--csvfile', required=True, help='Path to the input CSV file.')
+@click.option('--output', required=True, help='Path to the output CSV file.')
+@click.option('--statefile', default='progress.json', help='Path to the state file to save progress.')
+def check_domains(csvfile, output, statefile):
+    """Process domains from a CSV file and check their IPs and name servers."""
     if not SERVER_IP:
         logging.error("Setup SERVER_IP env to run script")
     else:
         logging.info("Starting CSV processing.")
-        process_csv(input_csv, output_csv, state_file)
+        process_csv(csvfile, output, statefile)
         logging.info("CSV processing completed.")
+
+@cli.command()
+@click.option('--csvfile', required=True, help='Path to the input CSV file.')
+@click.option('--output', required=True, help='Path to the output CSV file.')
+def check_ssl(csvfile, output):
+    """Check SSL certificates for domains in a CSV file."""
+    logging.info("Starting SSL certificate checking.")
+    process_ssl_csv(csvfile, output)
+    logging.info("SSL certificate checking completed.")
+
+if __name__ == '__main__':
+    cli()
