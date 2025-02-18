@@ -65,7 +65,7 @@ def process_caddy_update(self):
             (
                 r
                 for r in config["apps"]["http"]["servers"]["srv0"]["routes"]
-                if r["@id"] == "route.bonde.public"
+                if "@id" in r and r["@id"] == "route.bonde.public"
             ),
             None,
         )
@@ -80,7 +80,7 @@ def process_caddy_update(self):
             (
                 p
                 for p in config["apps"]["tls"]["automation"]["policies"]
-                if p["@id"] == "policy.bonde.ssl"
+                if "@id" in p and p["@id"] == "policy.bonde.ssl"
             ),
             None,
         )
