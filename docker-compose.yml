@@ -92,6 +92,42 @@ services:
     networks:
       - caddy_network
 
+  api-rest:
+    image: ghcr.io/nossas/bonde-server:latest
+    platform: linux/amd64
+    command: bundle exec puma -C config/puma.rb
+    # healthcheck:
+    #   test: ["wget", "-qO-", "localhost:3000"]
+    #   interval: "60s"
+    #   timeout: "3s"
+    #   start_period: "5s"
+    #   retries: 3
+    environment:
+      - DATABASE_URL=${BONDE_DATABASE_URL:-postgres://user:pass@postgres:5432/bonde}
+      - AWS_ID=${AWS_ACCESS_KEY_ID:-xxxxxxx}
+      - AWS_SECRET=${AWS_SECRET_ACCESS_KEY:-xxxxxx}
+      - AWS_ROUTE53_REGION=${AWS_REGION:-us-east-1}
+      - AWS_BUCKET=${API_REST_AWS_BUCKET:-hub-central}
+      - AWS_ENDPOINT=${AWS_ENDPOINT:-https://s3.amazonaws.com}
+      - AWS_ROUTE53_SYNC=${AWS_ROUTE53_SYNC:-force}
+      - AWS_ROUTE_IP=${AWS_ROUTE_IP:-127.0.0.1}
+      - API_HOST=${API_REST_HOST:-api-rest.bonde.devel}
+      - CLIENT_HOST=${API_REST_CLIENT_HOST:-bonde.devel}
+      - JWT_SECRET=${JWT_SECRET:-segredo123}
+      - LOG_LEVEL=${API_REST_LOG_LEVEL:-info}
+      - RAILS_ENV=${API_REST_ENV:-production}
+      - RAILS_SERVE_STATIC_FILES=${API_REST__SERVE_STATIC_FILES:-enabled}
+      - SECRET_KEY_BASE=${API_REST_SECRET_KEY_BASE:-seeeeeeeeeee}
+      - SMTP_HOST=${SMTP_HOST:-smtp}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-SG.fdsafdsafdsafdsa}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME:-apikey}
+      - PORT=3000
+      - WEB_CONCURRENCY=2
+      - WEB_MEMORY=1024
+    networks:
+      - caddy_network
+
 networks:
   caddy_network:
 
