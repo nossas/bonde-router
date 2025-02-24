@@ -34,6 +34,7 @@ def validate_authentication(request: Request) -> DecodedToken:
     jwt_token = None
     auth_header = request.headers.get("Authorization")
     session_cookie = request.cookies.get("session")
+    cron_header = request.headers.get("X-Hasura-Cron-Secret")
 
     if auth_header and auth_header.startswith("Bearer "):
         # Valida o header de Authorization
@@ -41,6 +42,11 @@ def validate_authentication(request: Request) -> DecodedToken:
     elif session_cookie:
         # Valida o cookie de sessão
         jwt_token = session_cookie
+    elif cron_header:
+        if cron_header != settings.HASURA_CRON_SECRET:
+            raise HTTPException(status_code=401, detail="Invalid Hasura-Cron-Secret")
+        else:
+            return {}
 
     if not jwt_token:
         raise HTTPException(status_code=401, detail="Missing JWT token")
