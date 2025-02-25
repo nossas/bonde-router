@@ -1,5 +1,8 @@
 # Bonde Router
 
+![Última versão](https://img.shields.io/github/v/tag/nossas/bonde-router?label=vers%C3%A3o&sort=semver)
+![Build Status](https://github.com/nossas/bonde-router/actions/workflows/build.yml/badge.svg?event=push&tag=latest)
+
 Este projeto fornece um conjunto de APIs para gerenciar roteamentos na plataforma BONDE, integrando Caddy, Let's Encrypt/ZeroSSL e Route53. Ele automatiza a criação e manutenção de domínios, certificados SSL e regras de tráfego, garantindo escalabilidade e segurança para aplicações distribuídas.
 
 ## Instalação e Configuração
