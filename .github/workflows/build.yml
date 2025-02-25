@@ -1,4 +1,4 @@
-name: Build and publish bonde-router version
+name: Build and publish nossas/bonde-router
 
 on:
   push:
