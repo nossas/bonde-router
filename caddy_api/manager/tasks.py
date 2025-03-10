@@ -18,6 +18,8 @@ def consolidate_operations():
         domains_to_remove = set()
 
         try:
+            domain_operations = dict() # Inicializa a variável fora do loop
+
             # Processa todas as operações na fila FIFO (lpop) enquanto existirem
             while True:
                 operation_data = redis_client.rpop(PENDING_OPERATIONS_KEY)
@@ -26,19 +28,20 @@ def consolidate_operations():
 
                 # Decodifica a operação (json)
                 operation, domains = json.loads(operation_data)
-                domain_operations = dict()
 
                 for domain in domains:
                     # Registra a última operação do domínio
                     domain_operations[domain] = operation
 
-            # Inicializar listas para adicionar e remover com base nas operações finais
-            domains_to_add = {
-                domain for domain, op in domain_operations.items() if op == "append"
-            }
-            domains_to_remove = {
-                domain for domain, op in domain_operations.items() if op == "remove"
-            }
+            # Evita erro caso nenhuma operação seja processada
+            if domain_operations:
+                # Inicializar listas para adicionar e remover com base nas operações finais
+                domains_to_add = {
+                    domain for domain, op in domain_operations.items() if op == "append"
+                }
+                domains_to_remove = {
+                    domain for domain, op in domain_operations.items() if op == "remove"
+                }
 
         finally:
             # Libera o lock

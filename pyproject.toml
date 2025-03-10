@@ -22,6 +22,7 @@ etcd3-py = "^0.1.6"
 dnspython = "^2.7.0"
 celery = "^5.4.0"
 pyjwt = "^2.10.1"
+flower = "^2.0.1"
 
 
 [tool.poetry.group.dev.dependencies]
